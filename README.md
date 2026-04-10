@@ -29,6 +29,24 @@ Some prompts to answer:
 
 You can include a simple diagram or bullet list if helpful.
 
+## RECOMMENDATION SYSTEM OVERVIEW
+
+Unlike Spotify or YouTube, which use advanced machine learning techniques that score from various features like clicks, skips, likes, and sound profile before running them through a complex pipeline, my recommender takes a simpler approach. It doesn't know anything about what other people like. It only knows the current user, and tries to find songs that match their taste directly.
+
+Each song carries a set of descriptive features like genre, mood, energy level, acousticness, tempo, valence, and danceability. The user profile stores the things that matter most for example, their favorite genre and mood, how energetic they like their music, and whether they tend to prefer acoustic sounds.
+
+When scoring a song, the system compares those profile preferences against the song's features using a simple weighted formula. Genre match matters most (35%), followed by mood (25%), energy (25%), and acousticness (15%). Valence, danceability, and tempo are will be used for future experimentation.
+
+Once every song has a score, the system sorts them highest to lowest and returns the top 5. The final score sits between 0.0 and 1.0, which represents the predicted percentage match for the user and the song.
+
+![Recommender Flowchart](recommender_flowchart_starter.png)
+
+## Known Biases
+
+- Genre has a 35% weighting, so a genre match alone can outscore a song that nails mood, energy, and acousticness but has the wrong genre.
+- Genre and mood use exact string comparison, so indie pop ≠ pop scores 0 despite being closely related. There is no concept of genre or mood proximity. I can address this with transformations to the song genre before being fed into the recommender.
+- Valence, danceability, and tempo aren't being utilized in the recommender. A deeply sad song and an upbeat one score identically if their other features match, which can produce recommendations that feel tonally wrong. I will experiment with these features if I have the time.
+
 ---
 
 ## Getting Started
@@ -50,9 +68,13 @@ pip install -r requirements.txt
 
 3. Run the app:
 
-```bash
-python -m src.main
 ```
+python src/main.py
+```
+
+Example Output:
+
+![Terminal Output](terminal_output.png)
 
 ### Running Tests
 

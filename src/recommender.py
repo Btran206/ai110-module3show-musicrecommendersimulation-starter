@@ -50,15 +50,81 @@ def load_songs(csv_path: str) -> List[Dict]:
     Loads songs from a CSV file.
     Required by src/main.py
     """
-    # TODO: Implement CSV loading logic
+    import csv
     print(f"Loading songs from {csv_path}...")
-    return []
+    songs = []
+    with open(csv_path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            songs.append({
+                "id": int(row["id"]),
+                "title": row["title"],
+                "artist": row["artist"],
+                "genre": row["genre"],
+                "mood": row["mood"],
+                "energy": float(row["energy"]),
+                "tempo_bpm": float(row["tempo_bpm"]),
+                "valence": float(row["valence"]),
+                "danceability": float(row["danceability"]),
+                "acousticness": float(row["acousticness"]),
+            })
+    print(f"Successfully loaded {len(songs)} songs.")
+    return songs
+
+def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
+    """
+    Scores a single song against user preferences.
+    Required by recommend_songs() and src/main.py
+    """
+    score = 0.0
+    reasons = []
+
+    if "genre" in user_prefs:
+        if song["genre"] == user_prefs["genre"]:
+            score += 0.35
+            reasons.append("genre match (0.35)")
+        else:
+            reasons.append("genre mismatch (0.00)")
+    else:
+        reasons.append("genre (skipped)")
+
+    if "mood" in user_prefs:
+        if song["mood"] == user_prefs["mood"]:
+            score += 0.25
+            reasons.append("mood match (0.25)")
+        else:
+            reasons.append("mood mismatch (0.00)")
+    else:
+        reasons.append("mood (skipped)")
+
+    if "energy" in user_prefs:
+        energy_contrib = 0.25 * (1 - abs(song["energy"] - user_prefs["energy"]))
+        score += energy_contrib
+        reasons.append(f"energy fit ({energy_contrib:.2f})")
+    else:
+        reasons.append("energy (skipped)")
+
+    if "acoustic" in user_prefs:
+        if user_prefs["acoustic"]:
+            acoustic_contrib = 0.15 * song["acousticness"]
+        else:
+            acoustic_contrib = 0.15 * (1 - song["acousticness"])
+        score += acoustic_contrib
+        reasons.append(f"acoustic fit ({acoustic_contrib:.2f})")
+    else:
+        reasons.append("acoustic (skipped)")
+
+    return score, reasons
 
 def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5) -> List[Tuple[Dict, float, str]]:
     """
     Functional implementation of the recommendation logic.
     Required by src/main.py
     """
-    # TODO: Implement scoring and ranking logic
-    # Expected return format: (song_dict, score, explanation)
-    return []
+    scored = []
+    for song in songs:
+        score, reasons = score_song(user_prefs, song)
+        scored.append((song, score, ", ".join(reasons)))
+
+    scored.sort(key=lambda x: x[1], reverse=True)
+    return scored[:k]
