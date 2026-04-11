@@ -57,5 +57,6 @@ def test_explain_recommendation_returns_non_empty_string():
     song = rec.songs[0]
 
     explanation = rec.explain_recommendation(user, song)
+    
     assert isinstance(explanation, str)
     assert explanation.strip() != ""
