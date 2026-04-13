@@ -2,42 +2,19 @@
 
 ## Project Summary
 
-In this project you will build and explain a small music recommender system.
-
-Your goal is to:
-
-- Represent songs and a user "taste profile" as data
-- Design a scoring rule that turns that data into recommendations
-- Evaluate what your system gets right and wrong
-- Reflect on how this mirrors real world AI recommenders
-
-Replace this paragraph with your own summary of what your version does.
+I built a simple music recommender that scores songs against a user's taste profile using four features: genre, mood, energy level, and acousticness. Each feature carries a fixed weight, and the system ranks every song by how closely it matches the user's preferences, then returns the top k results.
 
 ---
 
 ## How The System Works
 
-Explain your design in plain language.
-
-Some prompts to answer:
-
-- What features does each `Song` use in your system
-  - For example: genre, mood, energy, tempo
-- What information does your `UserProfile` store
-- How does your `Recommender` compute a score for each song
-- How do you choose which songs to recommend
-
-You can include a simple diagram or bullet list if helpful.
-
-## RECOMMENDATION SYSTEM OVERVIEW
-
-Unlike Spotify or YouTube, which use advanced machine learning techniques that score from various features like clicks, skips, likes, and sound profile before running them through a complex pipeline, my recommender takes a simpler approach. It doesn't know anything about what other people like. It only knows the current user, and tries to find songs that match their taste directly.
+Unlike Spotify or YouTube, which uses advanced machine learning techniques that score from various features like clicks, skips, likes, and sound profile before running them through a complex ML pipeline, my recommender takes a simpler approach. It doesn't know anything about what other people like. It only knows the current user, and tries to find songs that match their taste directly.
 
 Each song carries a set of descriptive features like genre, mood, energy level, acousticness, tempo, valence, and danceability. The user profile stores the things that matter most for example, their favorite genre and mood, how energetic they like their music, and whether they tend to prefer acoustic sounds.
 
 When scoring a song, the system compares those profile preferences against the song's features using a simple weighted formula. Genre match matters most (35%), followed by mood (25%), energy (25%), and acousticness (15%). Valence, danceability, and tempo are will be used for future experimentation.
 
-Once every song has a score, the system sorts them highest to lowest and returns the top 5. The final score sits between 0.0 and 1.0, which represents the predicted percentage match for the user and the song.
+Once every song has a score, the system sorts them highest to lowest and returns the top 5. The final score sits between 0.0 and 1.0, which represents the predicted percentage match for the user preference and the song.
 
 ![Recommender Flowchart](images/recommender_flowchart_starter.png)
 
@@ -85,8 +62,6 @@ Run the starter tests with:
 pytest
 ```
 
-You can add more tests in `tests/test_recommender.py`.
-
 ---
 
 ## Experiments
@@ -133,28 +108,15 @@ For test case 3, the recommendations look alot more balanced. Iron Collapse was 
 
 ## Limitations and Risks
 
-Summarize some limitations of your recommender.
-
-Examples:
-
-- It only works on a tiny catalog
-- It does not understand lyrics or language
-- It might over favor one genre or mood
-
-You will go deeper on this in your model card.
+The recommender operates on a dataset of only 20 songs, which is too small to find meaningful diversity or handle niche preferences. It relies entirely on four weighted features (genre, mood, energy, acousticness) with no learning from actual user behavior, so the weights are fixed guesses rather than data driven signals. Categorical features like genre and mood are binary where a song either matches or it doesn't which means the system cannot reason about song proximity (jazz being closer to blues than to metal). The model also has no tiebreaker logic, so songs with identical scores are ranked by their insertion order in the CSV rather than any preference signal.
 
 ---
 
 ## Reflection
 
-Read and complete `model_card.md`:
+Building this recommender made me realize that for my version at least is really just a formalized opinion. I decided what features matter, assigned them weights, and that choice shapes the result the system produces. Genre being worth 35% is a design decision and users will never see it or know why. This is the part that stuck with me most because the math looks objective on the surface, but the assumptions are the real drivers for these systems.
 
-[**Model Card**](model_card.md)
-
-Write 1 to 2 paragraphs here about what you learned:
-
-- about how recommenders turn data into predictions
-- about where bias or unfairness could show up in systems like this
+The bias was harder to see until I ran the edge cases and exposed these glaring issues. The binary categorical matching means the system has no sense of closeness between genres for example jazz and blues score the same as jazz and metal when neither matches. This can be a disadvantage for users with niche or cross genre tastes. Bias also presents itself with feature dominance in this case genre which overshadows other features like energy and acousticness even if they are a perfect fit. I didn't designed this model with these consequences in mind, more so how I important I felt these features were. In a larger system trained on user behavior, that same problem can show up if certain genres or moods are underrepresented in the training data. The model will learn to underserve those users and nobody will notice.
 
 
 ---
