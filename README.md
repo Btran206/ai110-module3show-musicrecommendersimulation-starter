@@ -39,7 +39,7 @@ When scoring a song, the system compares those profile preferences against the s
 
 Once every song has a score, the system sorts them highest to lowest and returns the top 5. The final score sits between 0.0 and 1.0, which represents the predicted percentage match for the user and the song.
 
-![Recommender Flowchart](recommender_flowchart_starter.png)
+![Recommender Flowchart](images/recommender_flowchart_starter.png)
 
 ## Known Biases
 
@@ -55,10 +55,11 @@ Once every song has a score, the system sorts them highest to lowest and returns
 
 1. Create a virtual environment (optional but recommended):
 
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate      # Mac or Linux
-   .venv\Scripts\activate         # Windows
+  ```bash
+  python -m venv .venv
+  source .venv/bin/activate      # Mac or Linux
+  .venv\Scripts\activate         # Windows
+  ```
 
 2. Install dependencies
 
@@ -74,7 +75,7 @@ python src/main.py
 
 Example Output:
 
-![Terminal Output](terminal_output.png)
+![Terminal Output](images/terminal_output.png)
 
 ### Running Tests
 
@@ -88,13 +89,45 @@ You can add more tests in `tests/test_recommender.py`.
 
 ---
 
-## Experiments You Tried
+## Experiments
 
-Use this section to document the experiments you ran. For example:
+I will be testing edge cases and model sensitivity within this section. The first image will be the default model while the second image will be the model with a weight shift from genre dominant to energy dominant.
 
-- What happened when you changed the weight on genre from 2.0 to 0.5
-- What happened when you added tempo or valence to the score
-- How did your system behave for different types of users
+### Edge Case 1 — Single categorical field
+
+Because Python's sort is stable, tied songs are returned in their original CSV insertion order. The system produces a ranked list with zero real differentiation among the top results. There is no tiebreaker logic, so the winner among equally scored songs is an determined soley by data order, not preference alignment.
+
+![Test 1](images/test1.png)
+
+After running a weight shift from genre's .35 to .175 and energy from .25 to .425, the single genre bias remains the same.
+
+![Test 1](images/test1V2.png)
+
+---
+
+### Edge Case 2 — Genre and mood that don't exist
+
+The system returns results, but the compressed score means all songs cluster closely together. Small differences in energy proximity become the primary differentiator, which can surface non-obvious winners (a mid energy synthwave track Night Drive beating a folk track Empty Porch because because intuitively, folk should be closer to bossa nova and zen). This shows how heavily the system depends on categorical hits to produce intuitive results.
+
+
+![Test 2](images/test2.png)
+
+For test case 2, although the outputs are different, the system still relies on categorical features to drive intuitive results. Another issue came up here which exposes tiebreaker logic again because rankings are sorted purely by insertion order. 
+
+![Test 2](images/test2V2.png)
+
+---
+
+### Edge Case 3 — Contradictory / self-fighting profile 
+
+When categorical weights sum to 0.60 the remaining 0.40 of continuous features cannot overcome even at maximum disagreement. A user who genuinely wants quiet acoustic music but states metal/aggressive as their genre/mood will consistently receive recommendations that contradict their continuous preferences. This confirms the over reliance on categorical matching noted in Known Biases.
+
+![Test 3](images/test3.png)
+
+For test case 3, the recommendations look alot more balanced. Iron Collapse was not skewed to the top for having a dominating genre match when presented with low energy and acoustic profile.
+
+![Test 3](images/test3V2.png)
+
 
 ---
 
