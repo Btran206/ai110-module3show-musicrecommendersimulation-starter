@@ -16,6 +16,8 @@ Music Wizard generates song recommendations from a fixed catalog based on a user
 
 Every song in has a set of descriptive tags like its genre, mood, how energetic it sounds, and how acoustic it is. The user provides a taste profile or their favorite genre and mood, a target energy level on a scale from 0 to 1, and whether they lean toward acoustic music. The system then goes through every song and tries to find a song that matches user preferences. For each of those four features a match will assign credit based on how close the match is, and adds it all up into a single score between 0 and 1. Genre and mood will be scored by either a match or not. Energy and acousticness are scored on a scale based on how far the song is from what the user wants. The songs are then sorted by the resulting score and the top results are returned.
 
+I later refined the starter logic to add proximity bubbles for genre and mood, a soft multiplier for acoustic fit, and a valence tiebreaker. Songs genre and moods shouldn't just be an all or nothing, pop and indie-pop should be considered adjacent which is why the scoring was updated to give partial credit, similar for mood. Adding a soft multiplier for acoustic fit is better here because the penalty was too strict if a user did not want acoustic music. A tiebreaker was added for when songs end up with the same score. Rather than falling back on whichever song happened to appear first in the data file, the tiebreaker looks at the mood context. If you asked for something happy or uplifting, tied songs are then ranked by flavor.
+
 ---
 
 ## 4. Data  

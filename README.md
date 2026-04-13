@@ -103,6 +103,33 @@ For test case 3, the recommendations look alot more balanced. Iron Collapse was 
 
 ![Test 3](images/test3V2.png)
 
+### Refined Model - Genre/Mood Proximity, Valence Tiebreaker, and Soft Acoustic target
+
+I wanted to see how adding feature proximity, tiebreaker logic, soft multipliers would affect the above test cases. First image is the old model and the second image is the refined model.
+
+### Edge Case 1 — Single categorical field
+
+![Test 1](images/test1.png)
+
+![Test 1](images/test1V3.png)
+
+We can see that new songs are now surfaced due to the genre/mood proximity. The near-match songs (ambient, jazz, classical) now score 0.175 and fill out the rest of the top 5 where previously only 3 lofi songs scored above 0. However, since there is no mood in this user profile, valence_direction is set to 0 and the tiebreaker does not fire. The near-match songs are still ordered by CSV insertion.
+
+### Edge Case 2 — Genre and mood that don't exist
+
+![Test 2](images/test2.png)
+
+![Test 2](images/test2V3.png)
+
+The soft acoustic target paired with valence tiebreaker definitely changed the outputs. But having no genre or mood context won't really give intuitive results still. Worth noting that the tiebreaker did not actually fire here — "zen" is not in either the high or low valence mood sets, so valence_direction is 0 and any output change is purely from the soft acoustic target.
+
+### Edge Case 3 — Contradictory / self-fighting profile 
+
+![Test 3](images/test3.png)
+
+![Test 3](images/test3V3.png)
+
+Genre still dominates after refining the model but the results differ. The key shift is that Storm Runner (rock, intense) now enters the top results via proximity — 0.175 from rock metal near-match plus 0.125 from intense aggressive near-match gives it 0.30 categorical credit before energy or acoustic are even scored. That is enough to push it into the top-5 despite having near-zero energy and acoustic fit. Iron Collapse's total score actually went slightly up rather than down because the soft acoustic target of 0.7 is less punishing for acousticness=0.03.
 
 ---
 
@@ -121,108 +148,4 @@ The bias was harder to see until I ran the edge cases and exposed these glaring 
 
 ---
 
-## 7. `model_card_template.md`
-
-Combines reflection and model card framing from the Module 3 guidance. :contentReference[oaicite:2]{index=2}  
-
-```markdown
-# 🎧 Model Card - Music Recommender Simulation
-
-## 1. Model Name
-
-Give your recommender a name, for example:
-
-> VibeFinder 1.0
-
----
-
-## 2. Intended Use
-
-- What is this system trying to do
-- Who is it for
-
-Example:
-
-> This model suggests 3 to 5 songs from a small catalog based on a user's preferred genre, mood, and energy level. It is for classroom exploration only, not for real users.
-
----
-
-## 3. How It Works (Short Explanation)
-
-Describe your scoring logic in plain language.
-
-- What features of each song does it consider
-- What information about the user does it use
-- How does it turn those into a number
-
-Try to avoid code in this section, treat it like an explanation to a non programmer.
-
----
-
-## 4. Data
-
-Describe your dataset.
-
-- How many songs are in `data/songs.csv`
-- Did you add or remove any songs
-- What kinds of genres or moods are represented
-- Whose taste does this data mostly reflect
-
----
-
-## 5. Strengths
-
-Where does your recommender work well
-
-You can think about:
-- Situations where the top results "felt right"
-- Particular user profiles it served well
-- Simplicity or transparency benefits
-
----
-
-## 6. Limitations and Bias
-
-Where does your recommender struggle
-
-Some prompts:
-- Does it ignore some genres or moods
-- Does it treat all users as if they have the same taste shape
-- Is it biased toward high energy or one genre by default
-- How could this be unfair if used in a real product
-
----
-
-## 7. Evaluation
-
-How did you check your system
-
-Examples:
-- You tried multiple user profiles and wrote down whether the results matched your expectations
-- You compared your simulation to what a real app like Spotify or YouTube tends to recommend
-- You wrote tests for your scoring logic
-
-You do not need a numeric metric, but if you used one, explain what it measures.
-
----
-
-## 8. Future Work
-
-If you had more time, how would you improve this recommender
-
-Examples:
-
-- Add support for multiple users and "group vibe" recommendations
-- Balance diversity of songs instead of always picking the closest match
-- Use more features, like tempo ranges or lyric themes
-
----
-
-## 9. Personal Reflection
-
-A few sentences about what you learned:
-
-- What surprised you about how your system behaved
-- How did building this change how you think about real music recommenders
-- Where do you think human judgment still matters, even if the model seems "smart"
 
