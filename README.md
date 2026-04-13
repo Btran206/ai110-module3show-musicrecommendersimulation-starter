@@ -70,11 +70,11 @@ I will be testing edge cases and model sensitivity within this section. The firs
 
 ### Edge Case 1 — Single categorical field
 
-Because Python's sort is stable, tied songs are returned in their original CSV insertion order. The system produces a ranked list with zero real differentiation among the top results. There is no tiebreaker logic, so the winner among equally scored songs is an determined soley by data order, not preference alignment.
+Because Python's sort is stable, tied songs are returned in their original CSV insertion order. The system produces a ranked list with zero real differentiation among the top results. There is no tiebreaker logic, so the winner among equally scored songs is an determined soley by data order, not preference alignment. The lofi profile returns the three lofi songs Midnight Coding, Library Rain, and Focus Flow which are all quiet, low-energy, and instrumental. The remaining two slots fill with whatever comes first in the CSV regardless of fit.
 
 ![Test 1](images/test1.png)
 
-After running a weight shift from genre's .35 to .175 and energy from .25 to .425, the single genre bias remains the same.
+After running a weight shift from genre's .35 to .175 and energy from .25 to .425, the single genre bias remains the same. Since energy is not in this user profile the raised energy weight has nothing to act on, so the same three lofi songs appear at the top with a lower printed score. The composition of results does not change at all, only the numbers do.
 
 ![Test 1](images/test1V2.png)
 
@@ -82,12 +82,11 @@ After running a weight shift from genre's .35 to .175 and energy from .25 to .42
 
 ### Edge Case 2 — Genre and mood that don't exist
 
-The system returns results, but the compressed score means all songs cluster closely together. Small differences in energy proximity become the primary differentiator, which can surface non-obvious winners (a mid energy synthwave track Night Drive beating a folk track Empty Porch because because intuitively, folk should be closer to bossa nova and zen). This shows how heavily the system depends on categorical hits to produce intuitive results.
-
+The system returns results, but the compressed score means all songs cluster closely together. Small differences in energy proximity become the primary differentiator, which can surface non-obvious winners (a mid energy synthwave track Night Drive beating a folk track Empty Porch because because intuitively, folk should be closer to bossa nova and zen). This shows how heavily the system depends on categorical hits to produce intuitive results. The default model surfaces Night Drive (synthwave, mid to high energy) and Crown Up (hip-hop, mid to high energy) despite the intent being closer to gentle bossa nova.
 
 ![Test 2](images/test2.png)
 
-For test case 2, although the outputs are different, the system still relies on categorical features to drive intuitive results. Another issue came up here which exposes tiebreaker logic again because rankings are sorted purely by insertion order. 
+For test case 2  the system still relies on categorical features to drive intuitive results. Another issue came up here which exposes tiebreaker logic again because rankings are sorted purely by insertion order. With energy weighted more heavily, songs closest to 0.5 energy shifts rankings for mid tempo tracks like Velvet Hours (r&b) and Dirt Road Summer (country). The genre is still completely wrong relative to bossa nova, but the energy signal now dominates the full 0.40 of available continuous weight and produces a noticeably different list.
 
 ![Test 2](images/test2V2.png)
 
@@ -95,11 +94,11 @@ For test case 2, although the outputs are different, the system still relies on 
 
 ### Edge Case 3 — Contradictory / self-fighting profile 
 
-When categorical weights sum to 0.60 the remaining 0.40 of continuous features cannot overcome even at maximum disagreement. A user who genuinely wants quiet acoustic music but states metal/aggressive as their genre/mood will consistently receive recommendations that contradict their continuous preferences. This confirms the over reliance on categorical matching noted in Known Biases.
+When categorical weights sum to 0.60 the remaining 0.40 of continuous features cannot overcome even at maximum disagreement. A user who genuinely wants quiet acoustic music but states metal/aggressive as their genre/mood will consistently receive recommendations that contradict their continuous preferences. This confirms the over reliance on categorical matching noted in Known Biases. The default model puts Iron Collapse which is a loud, fast, and nearly non-acoustic metal track at the top of the list for a user who asked for energy=0.0 and acoustic=True.
 
 ![Test 3](images/test3.png)
 
-For test case 3, the recommendations look alot more balanced. Iron Collapse was not skewed to the top for having a dominating genre match when presented with low energy and acoustic profile.
+For test case 3, the recommendations look alot more balanced. Iron Collapse was not skewed to the top for having a dominating genre match when presented with low energy and acoustic profile. With genre weight halved and energy weight raised, low energy and highly acoustic songs like Empty Porch (folk) and Raindrop Sonata (classical) now outscore Iron Collapse because they match the continuous preferences.
 
 ![Test 3](images/test3V2.png)
 
@@ -121,7 +120,7 @@ We can see that new songs are now surfaced due to the genre/mood proximity. The 
 
 ![Test 2](images/test2V3.png)
 
-The soft acoustic target paired with valence tiebreaker definitely changed the outputs. But having no genre or mood context won't really give intuitive results still. Worth noting that the tiebreaker did not actually fire here — "zen" is not in either the high or low valence mood sets, so valence_direction is 0 and any output change is purely from the soft acoustic target.
+The soft acoustic target paired with valence tiebreaker definitely changed the outputs. But having no genre or mood context won't really give intuitive results still. Worth noting that the tiebreaker was not utilized here  because zen is not in either the high or low valence mood sets, so valence_direction is 0 and any output change is purely from the soft acoustic target.
 
 ### Edge Case 3 — Contradictory / self-fighting profile 
 
@@ -129,7 +128,7 @@ The soft acoustic target paired with valence tiebreaker definitely changed the o
 
 ![Test 3](images/test3V3.png)
 
-Genre still dominates after refining the model but the results differ. The key shift is that Storm Runner (rock, intense) now enters the top results via proximity — 0.175 from rock metal near-match plus 0.125 from intense aggressive near-match gives it 0.30 categorical credit before energy or acoustic are even scored. That is enough to push it into the top-5 despite having near-zero energy and acoustic fit. Iron Collapse's total score actually went slightly up rather than down because the soft acoustic target of 0.7 is less punishing for acousticness=0.03.
+Genre still dominates after refining the model but the results differ. The key shift is that Storm Runner (rock, intense) now enters the top results via proximity 0.175 from rock metal near-match plus 0.125 from intense aggressive near-match gives it 0.30 categorical credit before energy or acoustic are even scored. That is enough to push it into the top 5 despite having near zero energy and acoustic fit. Iron Collapse's total score actually went slightly up rather than down because the soft acoustic target of 0.7 is less punishing for acousticness=0.03.
 
 ---
 
