@@ -1,6 +1,53 @@
 from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
 
+# Genres that are considered adjacent — earn 50% genre credit instead of 0
+GENRE_CLUSTERS = {
+    "pop":       {"indie pop", "synthwave"},
+    "indie pop": {"pop"},
+    "lofi":      {"ambient", "jazz", "classical"},
+    "ambient":   {"lofi", "classical"},
+    "jazz":      {"lofi", "r&b", "blues"},
+    "folk":      {"country", "blues"},
+    "country":   {"folk"},
+    "rock":      {"metal"},
+    "metal":     {"rock"},
+    "hip-hop":   {"r&b"},
+    "r&b":       {"hip-hop", "jazz"},
+    "edm":       {"synthwave"},
+    "synthwave":  {"edm", "pop"},
+    "blues":     {"jazz", "folk"},
+    "classical": {"ambient", "lofi"},
+    "latin":     {"reggae"},
+    "reggae":    {"latin"},
+}
+
+# Moods that are considered adjacent — earn 50% mood credit instead of 0
+MOOD_CLUSTERS = {
+    "happy":       {"uplifting", "playful"},
+    "uplifting":   {"happy", "playful"},
+    "playful":     {"happy", "uplifting"},
+    "chill":       {"relaxed", "focused"},
+    "relaxed":     {"chill", "focused"},
+    "focused":     {"chill", "relaxed"},
+    "melancholic": {"sad", "nostalgic", "soulful", "moody"},
+    "sad":         {"melancholic", "nostalgic"},
+    "nostalgic":   {"melancholic", "sad"},
+    "intense":     {"aggressive", "energetic"},
+    "aggressive":  {"intense", "energetic"},
+    "energetic":   {"intense", "aggressive"},
+    "moody":       {"melancholic", "romantic"},
+    "romantic":    {"moody", "soulful"},
+    "confident":   {"energetic"},
+    "soulful":     {"melancholic", "romantic"},
+}
+
+# Moods where higher valence (more positive/cheerful) wins ties
+HIGH_VALENCE_MOODS = {"happy", "uplifting", "playful", "energetic", "confident", "romantic"}
+# Moods where lower valence (more somber/dark) wins ties
+LOW_VALENCE_MOODS = {"sad", "melancholic", "nostalgic", "moody", "soulful", "aggressive", "intense"}
+
+
 @dataclass
 class Song:
     """
@@ -111,6 +158,9 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
         if song["genre"] == user_prefs["genre"]:
             score += 0.35
             reasons.append("genre match (0.35)")
+        elif song["genre"] in GENRE_CLUSTERS.get(user_prefs["genre"], set()):
+            score += 0.175
+            reasons.append("genre near-match (0.18)")
         else:
             reasons.append("genre mismatch (0.00)")
     else:
@@ -120,6 +170,9 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
         if song["mood"] == user_prefs["mood"]:
             score += 0.25
             reasons.append("mood match (0.25)")
+        elif song["mood"] in MOOD_CLUSTERS.get(user_prefs["mood"], set()):
+            score += 0.125
+            reasons.append("mood near-match (0.13)")
         else:
             reasons.append("mood mismatch (0.00)")
     else:
@@ -133,10 +186,8 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
         reasons.append("energy (skipped)")
 
     if "acoustic" in user_prefs:
-        if user_prefs["acoustic"]:
-            acoustic_contrib = 0.15 * song["acousticness"]
-        else:
-            acoustic_contrib = 0.15 * (1 - song["acousticness"])
+        target_acousticness = 0.7 if user_prefs["acoustic"] else 0.3
+        acoustic_contrib = 0.15 * (1 - abs(song["acousticness"] - target_acousticness))
         score += acoustic_contrib
         reasons.append(f"acoustic fit ({acoustic_contrib:.2f})")
     else:
@@ -154,5 +205,13 @@ def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5) -> List[Tup
         score, reasons = score_song(user_prefs, song)
         scored.append((song, score, ", ".join(reasons)))
 
-    scored.sort(key=lambda x: x[1], reverse=True)
+    mood = user_prefs.get("mood", "")
+    if mood in HIGH_VALENCE_MOODS:
+        valence_direction = 1    # ties broken by higher valence
+    elif mood in LOW_VALENCE_MOODS:
+        valence_direction = -1   # ties broken by lower valence
+    else:
+        valence_direction = 0    # no mood context — leave ties as stable sort
+
+    scored.sort(key=lambda x: (x[1], valence_direction * x[0].get("valence", 0)), reverse=True)
     return scored[:k]
